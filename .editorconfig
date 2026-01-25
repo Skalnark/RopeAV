@@ -1,0 +1,7 @@
+root = true
+
+[*]
+charset = utf-8
+
+# CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+dotnet_diagnostic.CS8632.severity = none
