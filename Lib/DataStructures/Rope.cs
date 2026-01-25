@@ -80,7 +80,8 @@ public sealed class Rope : SplayTree<Rope>
 		int limit = Math.Max(left._maxLeafLength, right._maxLeafLength);
 		left.Parent = null;
 		right.Parent = null;
-		return new Rope(left, right, limit);
+		Rope merged = new Rope(left, right, limit);
+		return merged.Rebalance();
 	}
 
 	public Rope Concat(Rope right) => Concat(this, right);
@@ -125,7 +126,8 @@ public sealed class Rope : SplayTree<Rope>
 	{
 		int limit = _maxLeafLength;
 		(Rope? left, Rope? right) = Split(index);
-		return Concat(Concat(left, Build(text, limit)), right);
+		Rope merged = Concat(Concat(left, Build(text, limit)), right);
+		return merged.Rebalance();
 	}
 
 	public Rope Delete(int index, int count)
@@ -143,7 +145,7 @@ public sealed class Rope : SplayTree<Rope>
 			right = null;
 		}
 
-		return Concat(left, right);
+		return Concat(left, right).Rebalance();
 	}
 
 	public Rope Substring(int index, int length)
@@ -159,7 +161,12 @@ public sealed class Rope : SplayTree<Rope>
 		{
 			middle = null;
 		}
-		return middle ?? Build(string.Empty, _maxLeafLength);
+		return (middle ?? Build(string.Empty, _maxLeafLength)).Rebalance();
+	}
+
+	public Rope Rebalance()
+	{
+		return FromString(ToString(), _maxLeafLength);
 	}
 
 	public override string ToString()
