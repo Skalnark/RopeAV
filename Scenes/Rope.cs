@@ -141,5 +141,40 @@ public partial class RopeVisualizer : Node2D
 		}
 	}
 
+	public Rect2 GetBounds()
+	{
+		if (_rope is null)
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		_positions.Clear();
+		_currentX = 0f;
+		ComputeLayout(_rope, 0);
+
+		float minX = float.PositiveInfinity;
+		float minY = float.PositiveInfinity;
+		float maxX = float.NegativeInfinity;
+		float maxY = float.NegativeInfinity;
+
+		foreach (Vector2 pos in _positions.Values)
+		{
+			Vector2 world = WithOffset(pos);
+			minX = MathF.Min(minX, world.X - NodeWidth * 0.5f);
+			minY = MathF.Min(minY, world.Y - NodeHeight * 0.5f);
+			maxX = MathF.Max(maxX, world.X + NodeWidth * 0.5f);
+			maxY = MathF.Max(maxY, world.Y + NodeHeight * 0.5f);
+		}
+
+		if (minX == float.PositiveInfinity)
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		Vector2 min = new Vector2(minX, minY);
+		Vector2 size = new Vector2(maxX - minX, maxY - minY);
+		return new Rect2(min, size);
+	}
+
 	private Vector2 WithOffset(Vector2 point) => point + _origin;
 }

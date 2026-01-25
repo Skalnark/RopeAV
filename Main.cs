@@ -9,6 +9,7 @@ public partial class Main : Node2D
 	private int _maxLeafLength = 4;
 	private Rope _rope = Rope.FromString("Hello, world!", 4);
 	private RopeNode? _visualizer;
+	private PanelContainer? _panel;
 
 	private LineEdit? _inputText;
 	private LineEdit? _insertText;
@@ -30,7 +31,7 @@ public partial class Main : Node2D
 		var layer = new CanvasLayer();
 		AddChild(layer);
 
-		var panel = new PanelContainer
+		_panel = new PanelContainer
 		{
 			CustomMinimumSize = new Vector2(440, 0)
 		};
@@ -44,9 +45,9 @@ public partial class Main : Node2D
 		var root = new VBoxContainer();
 		root.AddThemeConstantOverride("separation", 6);
 
-		panel.AddChild(margin);
+		_panel.AddChild(margin);
 		margin.AddChild(root);
-		layer.AddChild(panel);
+		layer.AddChild(_panel);
 
 		_ropeValueLabel = new Label
 		{
@@ -105,7 +106,7 @@ public partial class Main : Node2D
 		root.AddChild(_statusLabel);
 
 		// Keep the panel tucked to the top-left.
-		panel.Position = new Vector2(12, 12);
+		_panel.Position = new Vector2(12, 12);
 	}
 
 	private void RunSafe(Action action, string successMessage)
@@ -169,5 +170,22 @@ public partial class Main : Node2D
 	private void UpdateLeafLimit()
 	{
 		_maxLeafLength = (int)(_leafSizeBox?.Value ?? _maxLeafLength);
+	}
+
+	public override void _UnhandledInput(InputEvent @event)
+	{
+		if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+		{
+			Control? focus = GetViewport()?.GuiGetFocusOwner();
+			if (focus is not null && _panel is not null)
+			{
+				Rect2 rect = _panel.GetGlobalRect();
+				Vector2 mouse = GetViewport()?.GetMousePosition() ?? Vector2.Zero;
+				if (!rect.HasPoint(mouse))
+				{
+					focus.ReleaseFocus();
+				}
+			}
+		}
 	}
 }
