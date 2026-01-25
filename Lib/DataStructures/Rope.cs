@@ -7,18 +7,25 @@ public sealed class Rope : SplayTree<Rope>
 {
 	private string _text;
 	private int _weight;
+	private readonly int _maxLeafLength;
 
 	public bool IsLeaf => Left is null && Right is null;
 	public int Length => _weight + _text.Length + (Right?.Length ?? 0);
 
-	public Rope(string text)
+	internal string TextSegment => _text;
+	internal int Weight => _weight;
+	public int MaxLeafLength => _maxLeafLength;
+
+	private Rope(string text, int maxLeafLength)
 	{
-		_text = text ?? string.Empty;
+		_maxLeafLength = maxLeafLength;
+		_text = text;
 		_weight = 0;
 	}
 
-	private Rope(Rope left, Rope right)
+	private Rope(Rope left, Rope right, int maxLeafLength)
 	{
+		_maxLeafLength = maxLeafLength;
 		_text = string.Empty;
 		Left = left;
 		Right = right;
@@ -27,7 +34,24 @@ public sealed class Rope : SplayTree<Rope>
 		UpdateWeight();
 	}
 
-	public static Rope FromString(string text) => new(text);
+	public static Rope FromString(string text, int maxLeafLength = int.MaxValue)
+	{
+		int limit = Math.Max(1, maxLeafLength);
+		return Build(text ?? string.Empty, limit);
+	}
+
+	private static Rope Build(string text, int maxLeafLength)
+	{
+		if (text.Length <= maxLeafLength)
+		{
+			return new Rope(text, maxLeafLength);
+		}
+
+		int mid = text.Length / 2;
+		Rope left = Build(text[..mid], maxLeafLength);
+		Rope right = Build(text[mid..], maxLeafLength);
+		return new Rope(left, right, maxLeafLength);
+	}
 
 	public char this[int index]
 	{
@@ -45,12 +69,18 @@ public sealed class Rope : SplayTree<Rope>
 
 	public static Rope Concat(Rope? left, Rope? right)
 	{
-		if (left is null) return right ?? new Rope(string.Empty);
+		if (left is null && right is null)
+		{
+			return FromString(string.Empty, 1);
+		}
+
+		if (left is null) return right!;
 		if (right is null) return left;
 
+		int limit = Math.Max(left._maxLeafLength, right._maxLeafLength);
 		left.Parent = null;
 		right.Parent = null;
-		return new Rope(left, right);
+		return new Rope(left, right, limit);
 	}
 
 	public Rope Concat(Rope right) => Concat(this, right);
@@ -78,21 +108,24 @@ public sealed class Rope : SplayTree<Rope>
 		string leftText = root._text[..offset];
 		string rightText = root._text[offset..];
 
+
+		int limit = _maxLeafLength;
 		leftTree = leftText.Length == 0
 			? leftTree
-			: Join(leftTree, new Rope(leftText));
+			: Join(leftTree, Build(leftText, limit));
 
 		rightTree = rightText.Length == 0
 			? rightTree
-			: Join(new Rope(rightText), rightTree);
+			: Join(Build(rightText, limit), rightTree);
 
 		return (leftTree, rightTree);
 	}
 
 	public Rope Insert(int index, string text)
 	{
+		int limit = _maxLeafLength;
 		(Rope? left, Rope? right) = Split(index);
-		return Concat(Concat(left, new Rope(text)), right);
+		return Concat(Concat(left, Build(text, limit)), right);
 	}
 
 	public Rope Delete(int index, int count)
@@ -126,7 +159,7 @@ public sealed class Rope : SplayTree<Rope>
 		{
 			middle = null;
 		}
-		return middle ?? new Rope(string.Empty);
+		return middle ?? Build(string.Empty, _maxLeafLength);
 	}
 
 	public override string ToString()
