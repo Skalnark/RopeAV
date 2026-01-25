@@ -1,0 +1,6 @@
+[gd_scene load_steps=1 format=3 uid="uid://ddtv8smk8e4it"]
+
+[ext_resource type="Script" path="res://Scenes/LeafChar.cs" id="1_gb6ca"]
+
+[node name="LeafChar" type="Node2D"]
+script = ExtResource("1_gb6ca")

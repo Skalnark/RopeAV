@@ -12,7 +12,7 @@ public partial class MainCamera : Camera2D
 	[Export] public float FitPadding = 1.2f;
 	[Export] public float FollowLerp = 6f;
 
-	private RopeVisualizer? _visualizer;
+	private RopeNode? _visualizer;
 	private Vector2 _targetPos;
 	private Vector2 _targetZoom;
 	private Rect2 _lastBounds;
@@ -22,7 +22,7 @@ public partial class MainCamera : Camera2D
 
 	public override void _Ready()
 	{
-		_visualizer = GetNodeOrNull<RopeVisualizer>("../Rope");
+		_visualizer = GetNodeOrNull<RopeNode>("../Rope");
 		_targetPos = Position;
 		_targetZoom = Zoom;
 		MakeCurrent();

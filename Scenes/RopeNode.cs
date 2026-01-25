@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using System.Collections.Generic;
 using RopeAV.Lib.DataStructures;
@@ -6,18 +7,35 @@ namespace RopeAV;
 
 public partial class RopeNode : Node2D
 {
-	private readonly Dictionary<Rope, Vector2> _positions = [];
+	private readonly Dictionary<Rope, Vector2> _positions = new();
+	private readonly Dictionary<Rope, float> _widths = new();
+	private readonly Dictionary<Rope, int> _leafStartIndex = new();
 	private Rope? _rope;
+	private float _currentX;
+	private int _runningIndex;
+	private bool _layoutDirty = true;
+	private PackedScene? _leafCharScene;
+	private readonly List<Node2D> _leafInstances = new();
 
 	private const float HorizontalSpacing = 160f;
-	private const float VerticalSpacing = 100f;
+	private const float VerticalSpacing = 110f;
 	private const float NodeWidth = 130f;
-	private const float NodeHeight = 48f;
+	private const float NodeHeight = 64f;
 	private readonly Vector2 _origin = new(120f, 180f);
+	private const float NodeGap = 40f;
+	private const float CharSlotWidth = 26f;
+	private const float CharSlotHeight = 34f;
+	private const float LeafPadding = 24f;
+
+	public override void _Ready()
+	{
+		_leafCharScene = ResourceLoader.Load<PackedScene>("res://Scenes/LeafChar.tscn");
+	}
 
 	public void SetRope(Rope? rope)
 	{
 		_rope = rope;
+		_layoutDirty = true;
 		QueueRedraw();
 	}
 
@@ -28,30 +46,143 @@ public partial class RopeNode : Node2D
 			return;
 		}
 
-		_positions.Clear();
-		int leafIndex = 0;
-		ComputeLayout(_rope, 0, ref leafIndex);
+		EnsureLayout();
 		DrawEdges(_rope);
 		DrawNodes();
 	}
 
-	private float ComputeLayout(Rope node, int depth, ref int leafIndex)
+	private float ComputeLayout(Rope node, int depth)
 	{
 		float centerX;
 		if (node.IsLeaf)
 		{
-			centerX = leafIndex * HorizontalSpacing;
-			leafIndex++;
+			int len = node.TextSegment.Length;
+			float totalWidth = len * CharSlotWidth;
+			float contentWidth = Math.Max(NodeWidth, totalWidth + LeafPadding * 2f);
+			float width = contentWidth + NodeGap;
+			centerX = _currentX + width * 0.5f;
+			_positions[node] = new Vector2(centerX, depth * VerticalSpacing);
+			_widths[node] = contentWidth;
+			_leafStartIndex[node] = _runningIndex;
+			_runningIndex += len;
+			_currentX += width;
+			return width;
+		}
+
+		float leftWidth = 0f;
+		float rightWidth = 0f;
+		Vector2? leftPos = null;
+		Vector2? rightPos = null;
+
+		if (node.Left is not null)
+		{
+			leftWidth = ComputeLayout(node.Left, depth + 1);
+			leftPos = _positions[node.Left];
+		}
+
+		if (node.Right is not null)
+		{
+			rightWidth = ComputeLayout(node.Right, depth + 1);
+			rightPos = _positions[node.Right];
+		}
+
+		float widthCombined = (node.Left is not null && node.Right is not null)
+			? leftWidth + rightWidth
+			: MathF.Max(NodeWidth + NodeGap, leftWidth + rightWidth);
+
+		if (leftPos is not null && rightPos is not null)
+		{
+			centerX = (leftPos.Value.X + rightPos.Value.X) * 0.5f;
+		}
+		else if (leftPos is not null)
+		{
+			centerX = leftPos.Value.X;
+		}
+		else if (rightPos is not null)
+		{
+			centerX = rightPos.Value.X;
 		}
 		else
 		{
-			float leftX = node.Left is not null ? ComputeLayout(node.Left, depth + 1, ref leafIndex) : 0f;
-			float rightX = node.Right is not null ? ComputeLayout(node.Right, depth + 1, ref leafIndex) : leftX + HorizontalSpacing;
-			centerX = (leftX + rightX) * 0.5f;
+			float width = NodeWidth + NodeGap;
+			centerX = _currentX + width * 0.5f;
+			_currentX += width;
+			widthCombined = width;
 		}
 
 		_positions[node] = new Vector2(centerX, depth * VerticalSpacing);
-		return centerX;
+		_widths[node] = NodeWidth;
+		return widthCombined;
+	}
+
+	private void EnsureLayout()
+	{
+		if (!_layoutDirty || _rope is null) return;
+		_positions.Clear();
+		_widths.Clear();
+		_leafStartIndex.Clear();
+		_currentX = 0f;
+		_runningIndex = 0;
+		ComputeLayout(_rope, 0);
+		RebuildLeafInstances();
+		_layoutDirty = false;
+	}
+
+	private void ClearLeafInstances()
+	{
+		foreach (Node2D inst in _leafInstances)
+		{
+			inst.QueueFree();
+		}
+		_leafInstances.Clear();
+	}
+
+	private void RebuildLeafInstances()
+	{
+		ClearLeafInstances();
+		if (_leafCharScene is null || _rope is null) return;
+
+		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
+		{
+			Rope node = pair.Key;
+			if (!node.IsLeaf) continue;
+
+			int startIndex = _leafStartIndex.TryGetValue(node, out int s) ? s : 0;
+			Vector2 center = WithOffset(pair.Value);
+			string text = node.TextSegment;
+			int len = text.Length;
+			float totalWidth = len * CharSlotWidth;
+			float start = -totalWidth * 0.5f + CharSlotWidth * 0.5f;
+			for (int i = 0; i < len; i++)
+			{
+				Node inst = _leafCharScene.Instantiate();
+				if (inst is LeafChar lc)
+				{
+					lc.Configure(text[i].ToString(), startIndex + i);
+				}
+				if (inst is Node2D n2d)
+				{
+					n2d.Position = center + new Vector2(start + i * CharSlotWidth, -NodeHeight * 0.05f);
+					AddChild(n2d);
+					_leafInstances.Add(n2d);
+				}
+			}
+
+			if (len == 0)
+			{
+				Node inst = _leafCharScene.Instantiate();
+				if (inst is LeafChar lc)
+				{
+					lc.Configure("", startIndex);
+				}
+				if (inst is Node2D n2d)
+				{
+					n2d.Position = center;
+					AddChild(n2d);
+					_leafInstances.Add(n2d);
+				}
+			}
+		}
 	}
 
 	private void DrawEdges(Rope node)
@@ -83,20 +214,64 @@ public partial class RopeNode : Node2D
 		{
 			Rope node = pair.Key;
 			Vector2 pos = WithOffset(pair.Value);
+			float width = _widths.TryGetValue(node, out float w) ? w : NodeWidth;
 
-			Rect2 rect = new(pos - new Vector2(NodeWidth * 0.5f, NodeHeight * 0.5f), new Vector2(NodeWidth, NodeHeight));
+			Rect2 rect = new(pos - new Vector2(width * 0.5f, NodeHeight * 0.5f), new Vector2(width, NodeHeight));
 			Color fill = node.IsLeaf ? new Color(0.27f, 0.45f, 0.68f) : new Color(0.20f, 0.23f, 0.29f);
 			DrawRect(rect, fill);
 			DrawRect(rect, Colors.LightGray, false, 2f);
 
 			string lengthText = $"len={node.Length}";
 			Vector2 lengthPos = new(rect.Position.X + 8f, rect.Position.Y + NodeHeight * 0.35f);
-			DrawString(font, lengthPos, lengthText, alignment: HorizontalAlignment.Left, width: NodeWidth - 16f, fontSize: fontSize - 2, modulate: new Color(0.85f, 0.9f, 0.95f));
+			DrawString(font, lengthPos, lengthText, alignment: HorizontalAlignment.Left, width: width - 16f, fontSize: fontSize - 2, modulate: new Color(0.85f, 0.9f, 0.95f));
 
-			string label = node.IsLeaf ? $"\"{node.TextSegment}\"" : $"w={node.Weight}";
-			Vector2 textPos = new(rect.Position.X + 8f, rect.Position.Y + NodeHeight * 0.68f);
-			DrawString(font, textPos, label, alignment: HorizontalAlignment.Left, width: NodeWidth - 16f, fontSize: fontSize, modulate: Colors.White);
+			if (node.IsLeaf)
+			{
+				string label = $"leaf ({node.TextSegment.Length})";
+				Vector2 textPos = new(rect.Position.X + 8f, rect.Position.Y + NodeHeight * 0.7f);
+				DrawString(font, textPos, label, alignment: HorizontalAlignment.Left, width: width - 16f, fontSize: fontSize - 2, modulate: Colors.White);
+			}
+			else
+			{
+				string label = $"w={node.Weight}";
+				Vector2 textPos = new(rect.Position.X + 8f, rect.Position.Y + NodeHeight * 0.7f);
+				DrawString(font, textPos, label, alignment: HorizontalAlignment.Left, width: width - 16f, fontSize: fontSize, modulate: Colors.White);
+			}
 		}
+	}
+
+	public Rect2 GetBounds()
+	{
+		if (_rope is null)
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		EnsureLayout();
+
+		float minX = float.PositiveInfinity;
+		float minY = float.PositiveInfinity;
+		float maxX = float.NegativeInfinity;
+		float maxY = float.NegativeInfinity;
+
+		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
+		{
+			float width = _widths.TryGetValue(pair.Key, out float w) ? w : NodeWidth;
+			Vector2 world = WithOffset(pair.Value);
+			minX = MathF.Min(minX, world.X - width * 0.5f);
+			minY = MathF.Min(minY, world.Y - NodeHeight * 0.5f);
+			maxX = MathF.Max(maxX, world.X + width * 0.5f);
+			maxY = MathF.Max(maxY, world.Y + NodeHeight * 0.5f);
+		}
+
+		if (minX == float.PositiveInfinity)
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		Vector2 min = new Vector2(minX, minY);
+		Vector2 size = new Vector2(maxX - minX, maxY - minY);
+		return new Rect2(min, size);
 	}
 
 	private Vector2 WithOffset(Vector2 point) => point + _origin;

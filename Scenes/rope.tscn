@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b48nnvsn12p30"]
 
-[ext_resource type="Script" uid="uid://d1gig55gsuapu" path="res://Scenes/Rope.cs" id="1_aw0jv"]
+[ext_resource type="Script" path="res://Scenes/RopeNode.cs" id="1_aw0jv"]
 
 [node name="Rope" type="Node2D"]
 position = Vector2(520, 120)
