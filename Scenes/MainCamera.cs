@@ -9,14 +9,12 @@ public partial class MainCamera : Camera2D
 	[Export] public float ZoomStep = 1.15f;
 	[Export] public float MinZoom = 0.35f;
 	[Export] public float MaxZoom = 2.5f;
-	[Export] public float FitPadding = 1.2f;
+	[Export] public float FitPadding = 1.05f;
 	[Export] public float FollowLerp = 6f;
 
 	private RopeNode? _visualizer;
 	private Vector2 _targetPos;
 	private Vector2 _targetZoom;
-	private Rect2 _lastBounds;
-	private bool _boundsDirty = true;
 	private bool _dragging = false;
 	private Vector2 _lastDrag;
 
@@ -26,7 +24,12 @@ public partial class MainCamera : Camera2D
 		_targetPos = Position;
 		_targetZoom = Zoom;
 		MakeCurrent();
-		UpdateBounds(force:true);
+
+		if (_visualizer is not null)
+		{
+			Position = _visualizer.GlobalPosition;
+			_targetPos = Position;
+		}
 	}
 
 	public override void _UnhandledInput(InputEvent @event)
@@ -55,7 +58,17 @@ public partial class MainCamera : Camera2D
 			}
 		}
 
-		if (@event is InputEventMouseMotion motion && _dragging)
+		if (@event is InputEventKey key && key.Pressed && !key.Echo && key.Keycode == Key.Space)
+		{
+			Recentralize();
+		}
+
+		if (@event is InputEventScreenTouch touch && touch.Pressed && touch.DoubleTap)
+		{
+			Recentralize();
+		}
+
+		if (@event is InputEventMouseMotion && _dragging)
 		{
 			Vector2 now = GetGlobalMousePosition();
 			Vector2 delta = _lastDrag - now;
@@ -67,9 +80,7 @@ public partial class MainCamera : Camera2D
 
 	public override void _Process(double delta)
 	{
-		UpdateBounds();
 		HandlePan(delta);
-		EnsureTreeVisible();
 		SmoothFollow(delta);
 	}
 
@@ -91,6 +102,11 @@ public partial class MainCamera : Camera2D
 			Position += move.Normalized() * PanSpeed * (float)delta;
 			_targetPos = Position;
 		}
+
+		if (Input.IsActionJustPressed("recentralize"))
+		{
+			Recentralize();
+		}
 	}
 
 	private void ApplyZoom(float factor)
@@ -104,86 +120,23 @@ public partial class MainCamera : Camera2D
 		_targetZoom = z;
 	}
 
-	private void UpdateBounds(bool force = false)
+	private void Recentralize()
 	{
-		if (_visualizer is null) return;
-		Rect2 bounds = _visualizer.GetBounds();
-		if (!force && Approximately(bounds, _lastBounds))
-		{
-			return;
-		}
+		if (IsUiFocused()) return;
 
-		_lastBounds = bounds;
-		_boundsDirty = true;
+		_targetPos = _visualizer is null ? Vector2.Zero : _visualizer.GlobalPosition;
+	}
+
+	public void OnRecentralizeButtonPressed()
+	{
+		Recentralize();
 	}
 
 	private void SmoothFollow(double delta)
 	{
-		if (_boundsDirty)
-		{
-			FitToBounds(_lastBounds);
-		}
-
 		float t = 1f - Mathf.Exp(-FollowLerp * (float)delta);
 		Position = Position.Lerp(_targetPos, t);
 		Zoom = Zoom.Lerp(_targetZoom, t);
-	}
-
-	private void EnsureTreeVisible()
-	{
-		if (_visualizer is null) return;
-		if (_lastBounds.Size == Vector2.Zero) return;
-		Rect2 view = GetViewRectWorld();
-		if (!view.Encloses(_lastBounds))
-		{
-			FitToBounds(_lastBounds);
-		}
-	}
-
-	private Rect2 GetViewRectWorld()
-	{
-		Vector2 viewport = GetViewportRect().Size;
-		Vector2 size = viewport * Zoom;
-		Vector2 pos = Position - size * 0.5f;
-		return new Rect2(pos, size);
-	}
-
-	private void FitToBounds(Rect2 bounds)
-	{
-		if (bounds.Size == Vector2.Zero)
-		{
-			_targetPos = Position;
-			_targetZoom = Zoom;
-			_boundsDirty = false;
-			return;
-		}
-
-		Vector2 viewport = GetViewportRect().Size;
-		if (viewport == Vector2.Zero)
-		{
-			_boundsDirty = false;
-			return;
-		}
-
-		Vector2 padded = bounds.Size * FitPadding;
-		float scaleX = padded.X / viewport.X;
-		float scaleY = padded.Y / viewport.Y;
-		float target = MathF.Max(scaleX, scaleY);
-		if (target < MinZoom) target = MinZoom;
-		target = MathF.Min(target, MaxZoom);
-
-		_targetZoom = new Vector2(target, target);
-		_targetPos = bounds.Position + bounds.Size * 0.5f;
-		_boundsDirty = false;
-	}
-
-	private static bool Approximately(Rect2 a, Rect2 b)
-	{
-		const float eps = 0.5f;
-		return MathF.Abs(a.Position.X - b.Position.X) < eps
-			&& MathF.Abs(a.Position.Y - b.Position.Y) < eps
-			&& MathF.Abs(a.Size.X - b.Size.X) < eps
-			&& MathF.Abs(a.Size.Y - b.Size.Y) < eps;
 	}
 
 	private bool IsUiFocused()

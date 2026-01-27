@@ -17,14 +17,12 @@ public partial class RopeNode : Node2D
 	private PackedScene? _leafCharScene;
 	private readonly List<Node2D> _leafInstances = new();
 
-	private const float HorizontalSpacing = 160f;
 	private const float VerticalSpacing = 110f;
 	private const float NodeWidth = 130f;
 	private const float NodeHeight = 64f;
 	private readonly Vector2 _origin = new(120f, 180f);
 	private const float NodeGap = 40f;
 	private const float CharSlotWidth = 26f;
-	private const float CharSlotHeight = 34f;
 	private const float LeafPadding = 24f;
 
 	public override void _Ready()
@@ -238,40 +236,6 @@ public partial class RopeNode : Node2D
 				DrawString(font, textPos, label, alignment: HorizontalAlignment.Left, width: width - 16f, fontSize: fontSize, modulate: Colors.White);
 			}
 		}
-	}
-
-	public Rect2 GetBounds()
-	{
-		if (_rope is null)
-		{
-			return new Rect2(_origin, Vector2.Zero);
-		}
-
-		EnsureLayout();
-
-		float minX = float.PositiveInfinity;
-		float minY = float.PositiveInfinity;
-		float maxX = float.NegativeInfinity;
-		float maxY = float.NegativeInfinity;
-
-		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
-		{
-			float width = _widths.TryGetValue(pair.Key, out float w) ? w : NodeWidth;
-			Vector2 world = WithOffset(pair.Value);
-			minX = MathF.Min(minX, world.X - width * 0.5f);
-			minY = MathF.Min(minY, world.Y - NodeHeight * 0.5f);
-			maxX = MathF.Max(maxX, world.X + width * 0.5f);
-			maxY = MathF.Max(maxY, world.Y + NodeHeight * 0.5f);
-		}
-
-		if (minX == float.PositiveInfinity)
-		{
-			return new Rect2(_origin, Vector2.Zero);
-		}
-
-		Vector2 min = new Vector2(minX, minY);
-		Vector2 size = new Vector2(maxX - minX, maxY - minY);
-		return new Rect2(min, size);
 	}
 
 	private Vector2 WithOffset(Vector2 point) => point + _origin;
