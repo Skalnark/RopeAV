@@ -69,7 +69,7 @@ public partial class Main : Node2D
 		root.AddChild(_inputText);
 
 		root.AddChild(new Label { Text = "Insert text" });
-		_insertText = new LineEdit { Text = " + " };
+		_insertText = new LineEdit { Text = "" };
 		root.AddChild(_insertText);
 
 		var row = new HBoxContainer();
