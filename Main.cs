@@ -11,6 +11,8 @@ public partial class Main : Node2D
 	private RopeNode? _visualizer;
 	private PanelContainer? _panel;
 
+	private bool _uiFaded = false;
+
 	private LineEdit? _inputText;
 	private LineEdit? _insertText;
 	private SpinBox? _indexBox;
@@ -29,12 +31,14 @@ public partial class Main : Node2D
 	private void BuildUi()
 	{
 		var layer = new CanvasLayer();
+		layer.Name = "UiLayer";
 		AddChild(layer);
 
 		_panel = new PanelContainer
 		{
 			CustomMinimumSize = new Vector2(440, 0)
 		};
+		_panel.Name = "UiPanel";
 
 		var margin = new MarginContainer();
 		margin.AddThemeConstantOverride("margin_left", 12);
@@ -107,6 +111,22 @@ public partial class Main : Node2D
 
 		// Keep the panel tucked to the top-left.
 		_panel.Position = new Vector2(12, 12);
+	}
+
+	public void SetUiFaded(bool faded)
+	{
+		if (_panel is null) return;
+		if (faded == _uiFaded) return;
+		_uiFaded = faded;
+		float alpha = faded ? 0.45f : 1f;
+		_panel.Modulate = new Color(1f, 1f, 1f, alpha);
+	}
+
+	public override void _Process(double delta)
+	{
+		Control? focus = GetViewport()?.GuiGetFocusOwner();
+		bool isUiFocused = focus is not null && focus.IsVisibleInTree();
+		SetUiFaded(!isUiFocused);
 	}
 
 	private void RunSafe(Action action, string successMessage)
