@@ -100,7 +100,7 @@ public partial class MainCamera : Camera2D
 			_targetPos = Position;
 		}
 
-		if (Input.IsActionJustPressed("recentralize"))
+		if (InputMap.HasAction("recentralize") && Input.IsActionJustPressed("recentralize"))
 		{
 			Recentralize();
 		}
