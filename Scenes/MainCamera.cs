@@ -1,6 +1,4 @@
 using Godot;
-using System;
-
 namespace RopeAV;
 
 public partial class MainCamera : Camera2D
@@ -9,7 +7,6 @@ public partial class MainCamera : Camera2D
 	[Export] public float ZoomStep = 1.15f;
 	[Export] public float MinZoom = 0.35f;
 	[Export] public float MaxZoom = 2.5f;
-	[Export] public float FitPadding = 1.05f;
 	[Export] public float FollowLerp = 6f;
 
 	private RopeNode? _visualizer;
@@ -27,7 +24,7 @@ public partial class MainCamera : Camera2D
 
 		if (_visualizer is not null)
 		{
-			Position = _visualizer.GlobalPosition;
+			Position = GetTreeCenter();
 			_targetPos = Position;
 		}
 	}
@@ -124,7 +121,7 @@ public partial class MainCamera : Camera2D
 	{
 		if (IsUiFocused()) return;
 
-		_targetPos = _visualizer is null ? Vector2.Zero : _visualizer.GlobalPosition;
+		_targetPos = GetTreeCenter();
 	}
 
 	public void OnRecentralizeButtonPressed()
@@ -143,5 +140,15 @@ public partial class MainCamera : Camera2D
 	{
 		Control? focus = GetViewport()?.GuiGetFocusOwner();
 		return focus is not null && focus.IsVisibleInTree();
+	}
+
+	private Vector2 GetTreeCenter()
+	{
+		if (_visualizer is null)
+		{
+			return Vector2.Zero;
+		}
+
+		return _visualizer.GetRootScenePosition();
 	}
 }

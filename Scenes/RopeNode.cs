@@ -10,12 +10,15 @@ public partial class RopeNode : Node2D
 	private readonly Dictionary<Rope, Vector2> _positions = new();
 	private readonly Dictionary<Rope, float> _widths = new();
 	private readonly Dictionary<Rope, int> _leafStartIndex = new();
+	private readonly Dictionary<Rope, Node2D> _nodeInstances = new();
 	private Rope? _rope;
 	private float _currentX;
 	private int _runningIndex;
 	private bool _layoutDirty = true;
 	private PackedScene? _leafCharScene;
 	private readonly List<Node2D> _leafInstances = new();
+	private Node2D? _treeContainer;
+	private Node2D? _rootInstance;
 
 	private const float VerticalSpacing = 110f;
 	private const float NodeWidth = 130f;
@@ -28,6 +31,8 @@ public partial class RopeNode : Node2D
 	public override void _Ready()
 	{
 		_leafCharScene = ResourceLoader.Load<PackedScene>("res://Scenes/LeafChar.tscn");
+		_treeContainer = new Node2D { Name = "TreeGraph" };
+		AddChild(_treeContainer);
 	}
 
 	public void SetRope(Rope? rope)
@@ -122,6 +127,7 @@ public partial class RopeNode : Node2D
 		_currentX = 0f;
 		_runningIndex = 0;
 		ComputeLayout(_rope, 0);
+		RebuildNodeInstances();
 		RebuildLeafInstances();
 		_layoutDirty = false;
 	}
@@ -135,6 +141,39 @@ public partial class RopeNode : Node2D
 		_leafInstances.Clear();
 	}
 
+	private void ClearNodeInstances()
+	{
+		_nodeInstances.Clear();
+		_rootInstance = null;
+		if (_treeContainer is null) return;
+		foreach (Node child in _treeContainer.GetChildren())
+		{
+			child.QueueFree();
+		}
+	}
+
+	private void RebuildNodeInstances()
+	{
+		ClearNodeInstances();
+		if (_treeContainer is null) return;
+
+		int idx = 0;
+		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
+		{
+			Rope node = pair.Key;
+			Node2D inst = new Node2D();
+			inst.Name = node.IsLeaf ? $"LeafNode_{idx}" : $"Node_{idx}";
+			inst.Position = WithOffset(pair.Value);
+			_treeContainer.AddChild(inst);
+			_nodeInstances[node] = inst;
+			if (node == _rope)
+			{
+				_rootInstance = inst;
+			}
+			idx++;
+		}
+	}
+
 	private void RebuildLeafInstances()
 	{
 		ClearLeafInstances();
@@ -146,7 +185,8 @@ public partial class RopeNode : Node2D
 			if (!node.IsLeaf) continue;
 
 			int startIndex = _leafStartIndex.TryGetValue(node, out int s) ? s : 0;
-			Vector2 center = WithOffset(pair.Value);
+			Node? parent = _nodeInstances.TryGetValue(node, out Node2D instNode) ? instNode : _treeContainer;
+			Vector2 center = parent is null ? WithOffset(pair.Value) : Vector2.Zero;
 			string text = node.TextSegment;
 			int len = text.Length;
 			float totalWidth = len * CharSlotWidth;
@@ -161,7 +201,7 @@ public partial class RopeNode : Node2D
 				if (inst is Node2D n2d)
 				{
 					n2d.Position = center + new Vector2(start + i * CharSlotWidth, -NodeHeight * 0.05f);
-					AddChild(n2d);
+					parent?.AddChild(n2d);
 					_leafInstances.Add(n2d);
 				}
 			}
@@ -176,7 +216,7 @@ public partial class RopeNode : Node2D
 				if (inst is Node2D n2d)
 				{
 					n2d.Position = center;
-					AddChild(n2d);
+					parent?.AddChild(n2d);
 					_leafInstances.Add(n2d);
 				}
 			}
@@ -239,4 +279,89 @@ public partial class RopeNode : Node2D
 	}
 
 	private Vector2 WithOffset(Vector2 point) => point + _origin;
+
+	public Rect2 GetBounds()
+	{
+		if (_rope is null)
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		EnsureLayout();
+
+		float minX = float.PositiveInfinity;
+		float minY = float.PositiveInfinity;
+		float maxX = float.NegativeInfinity;
+		float maxY = float.NegativeInfinity;
+
+		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
+		{
+			float width = _widths.TryGetValue(pair.Key, out float w) ? w : NodeWidth;
+			Vector2 world = WithOffset(pair.Value);
+			minX = MathF.Min(minX, world.X - width * 0.5f);
+			minY = MathF.Min(minY, world.Y - NodeHeight * 0.5f);
+			maxX = MathF.Max(maxX, world.X + width * 0.5f);
+			maxY = MathF.Max(maxY, world.Y + NodeHeight * 0.5f);
+		}
+
+		if (float.IsPositiveInfinity(minX))
+		{
+			return new Rect2(_origin, Vector2.Zero);
+		}
+
+		Vector2 min = new Vector2(minX, minY);
+		Vector2 size = new Vector2(maxX - minX, maxY - minY);
+		return new Rect2(min, size);
+	}
+
+	public Vector2 GetLeafSpanCenter()
+	{
+		if (_rope is null)
+		{
+			return _origin;
+		}
+
+		EnsureLayout();
+
+		float minX = float.PositiveInfinity;
+		float maxX = float.NegativeInfinity;
+		float minY = float.PositiveInfinity;
+		float maxY = float.NegativeInfinity;
+
+		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
+		{
+			Rope node = pair.Key;
+			if (!node.IsLeaf) continue;
+
+			Vector2 world = WithOffset(pair.Value);
+			minX = MathF.Min(minX, world.X);
+			maxX = MathF.Max(maxX, world.X);
+			minY = MathF.Min(minY, world.Y);
+			maxY = MathF.Max(maxY, world.Y);
+		}
+
+		if (float.IsPositiveInfinity(minX) || float.IsNegativeInfinity(maxX))
+		{
+			return GetBounds().Position + GetBounds().Size * 0.5f;
+		}
+
+		float midX = (minX + maxX) * 0.5f;
+		float midY = (minY + maxY) * 0.5f;
+		return new Vector2(midX, midY);
+	}
+
+	public Vector2 GetRootScenePosition()
+	{
+		if (_rootInstance is not null)
+		{
+			return _rootInstance.GlobalPosition;
+		}
+
+		if (_treeContainer is not null && _treeContainer.GetChildCount() > 0)
+		{
+			return _treeContainer.GlobalPosition;
+		}
+
+		return GlobalPosition + _origin;
+	}
 }
