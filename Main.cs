@@ -30,23 +30,25 @@ public partial class Main : Node2D
 
 	private void BuildUi()
 	{
-		var layer = new CanvasLayer();
-		layer.Name = "UiLayer";
-		AddChild(layer);
+        CanvasLayer layer = new()
+        {
+            Name = "UiLayer"
+        };
+        AddChild(layer);
 
-		_panel = new PanelContainer
-		{
-			CustomMinimumSize = new Vector2(440, 0)
-		};
-		_panel.Name = "UiPanel";
+        _panel = new PanelContainer
+        {
+            CustomMinimumSize = new Vector2(440, 0),
+            Name = "UiPanel"
+        };
 
-		var margin = new MarginContainer();
+        MarginContainer margin = new();
 		margin.AddThemeConstantOverride("margin_left", 12);
 		margin.AddThemeConstantOverride("margin_right", 12);
 		margin.AddThemeConstantOverride("margin_top", 12);
 		margin.AddThemeConstantOverride("margin_bottom", 12);
 
-		var root = new VBoxContainer();
+        VBoxContainer root = new();
 		root.AddThemeConstantOverride("separation", 6);
 
 		_panel.AddChild(margin);
@@ -72,7 +74,7 @@ public partial class Main : Node2D
 		_insertText = new LineEdit { Text = "" };
 		root.AddChild(_insertText);
 
-		var row = new HBoxContainer();
+        HBoxContainer row = new();
 		row.AddThemeConstantOverride("separation", 8);
 		row.AddChild(new Label { Text = "Index" });
 		_indexBox = new SpinBox { MinValue = 0, Step = 1, Value = 0 };
@@ -82,21 +84,21 @@ public partial class Main : Node2D
 		row.AddChild(_lengthBox);
 		root.AddChild(row);
 
-		var buttonRow = new HBoxContainer();
+        HBoxContainer buttonRow = new();
 		buttonRow.AddThemeConstantOverride("separation", 8);
-		var buildButton = new Button { Text = "Build" };
+        Button buildButton = new() { Text = "Build" };
 		buildButton.Pressed += () => RunSafe(BuildRopeFromInput, "Built rope from input");
 		buttonRow.AddChild(buildButton);
 
-		var insertButton = new Button { Text = "Insert" };
+        Button insertButton = new() { Text = "Insert" };
 		insertButton.Pressed += () => RunSafe(InsertText, "Inserted text");
 		buttonRow.AddChild(insertButton);
 
-		var deleteButton = new Button { Text = "Delete" };
+        Button deleteButton = new() { Text = "Delete" };
 		deleteButton.Pressed += () => RunSafe(DeleteText, "Deleted text");
 		buttonRow.AddChild(deleteButton);
 
-		var resetButton = new Button { Text = "Reset" };
+        Button resetButton = new() { Text = "Reset" };
 		resetButton.Pressed += () => RunSafe(ResetRope, "Reset to empty");
 		buttonRow.AddChild(resetButton);
 

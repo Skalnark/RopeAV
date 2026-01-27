@@ -161,10 +161,12 @@ public partial class RopeNode : Node2D
 		foreach (KeyValuePair<Rope, Vector2> pair in _positions)
 		{
 			Rope node = pair.Key;
-			Node2D inst = new Node2D();
-			inst.Name = node.IsLeaf ? $"LeafNode_{idx}" : $"Node_{idx}";
-			inst.Position = WithOffset(pair.Value);
-			_treeContainer.AddChild(inst);
+            Node2D inst = new()
+            {
+                Name = node.IsLeaf ? $"LeafNode_{idx}" : $"Node_{idx}",
+                Position = WithOffset(pair.Value)
+            };
+            _treeContainer.AddChild(inst);
 			_nodeInstances[node] = inst;
 			if (node == _rope)
 			{
@@ -309,8 +311,8 @@ public partial class RopeNode : Node2D
 			return new Rect2(_origin, Vector2.Zero);
 		}
 
-		Vector2 min = new Vector2(minX, minY);
-		Vector2 size = new Vector2(maxX - minX, maxY - minY);
+		Vector2 min = new(minX, minY);
+		Vector2 size = new(maxX - minX, maxY - minY);
 		return new Rect2(min, size);
 	}
 

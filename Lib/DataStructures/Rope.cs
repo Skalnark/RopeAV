@@ -80,7 +80,7 @@ public sealed class Rope : SplayTree<Rope>
 		int limit = Math.Max(left._maxLeafLength, right._maxLeafLength);
 		left.Parent = null;
 		right.Parent = null;
-		Rope merged = new Rope(left, right, limit);
+		Rope merged = new(left, right, limit);
 		return merged.Rebalance();
 	}
 
@@ -171,7 +171,7 @@ public sealed class Rope : SplayTree<Rope>
 
 	public override string ToString()
 	{
-		var builder = new StringBuilder(Length);
+        StringBuilder builder = new(Length);
 		Traverse(this, builder);
 		return builder.ToString();
 	}
