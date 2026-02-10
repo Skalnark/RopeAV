@@ -1,0 +1,77 @@
+[gd_scene load_steps=1 format=3 uid="uid://c8y2n2l4t1a3d"]
+
+[node name="UiLayer" type="CanvasLayer"]
+
+[node name="UiPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(440, 0)
+position = Vector2(12, 12)
+
+[node name="Margin" type="MarginContainer" parent="UiPanel"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Root" type="VBoxContainer" parent="UiPanel/Margin"]
+theme_override_constants/separation = 6
+
+[node name="RopeValueLabel" type="Label" parent="UiPanel/Margin/Root"]
+text = ""
+
+[node name="MaxLeafLabel" type="Label" parent="UiPanel/Margin/Root"]
+text = "Max leaf length"
+
+[node name="LeafSizeBox" type="SpinBox" parent="UiPanel/Margin/Root"]
+min_value = 1.0
+max_value = 1024.0
+step = 1.0
+value = 4.0
+
+[node name="SourceLabel" type="Label" parent="UiPanel/Margin/Root"]
+text = "Source text"
+
+[node name="InputText" type="LineEdit" parent="UiPanel/Margin/Root"]
+text = ""
+
+[node name="InsertLabel" type="Label" parent="UiPanel/Margin/Root"]
+text = "Insert text"
+
+[node name="InsertText" type="LineEdit" parent="UiPanel/Margin/Root"]
+text = ""
+
+[node name="Row" type="HBoxContainer" parent="UiPanel/Margin/Root"]
+theme_override_constants/separation = 8
+
+[node name="IndexLabel" type="Label" parent="UiPanel/Margin/Root/Row"]
+text = "Index"
+
+[node name="IndexBox" type="SpinBox" parent="UiPanel/Margin/Root/Row"]
+min_value = 0.0
+step = 1.0
+value = 0.0
+
+[node name="LengthLabel" type="Label" parent="UiPanel/Margin/Root/Row"]
+text = "Length"
+
+[node name="LengthBox" type="SpinBox" parent="UiPanel/Margin/Root/Row"]
+min_value = 0.0
+step = 1.0
+value = 1.0
+
+[node name="ButtonRow" type="HBoxContainer" parent="UiPanel/Margin/Root"]
+theme_override_constants/separation = 8
+
+[node name="BuildButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+text = "Build"
+
+[node name="InsertButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+text = "Insert"
+
+[node name="DeleteButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+text = "Delete"
+
+[node name="ResetButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+text = "Reset"
+
+[node name="StatusLabel" type="Label" parent="UiPanel/Margin/Root"]
+text = ""

@@ -24,95 +24,77 @@ public partial class Main : Node2D
 	public override void _Ready()
 	{
 		_visualizer = GetNodeOrNull<RopeNode>("Rope");
-		BuildUi();
+		CacheUiNodes();
+		HookUiEvents();
+		InitializeUiValues();
 		RefreshUi("Loaded sample rope");
 	}
 
-	private void BuildUi()
+	private void CacheUiNodes()
 	{
-        CanvasLayer layer = new()
-        {
-            Name = "UiLayer"
-        };
-        AddChild(layer);
+		_panel = GetNodeOrNull<PanelContainer>("UiLayer/UiPanel");
+		_ropeValueLabel = GetNodeOrNull<Label>("UiLayer/UiPanel/Margin/Root/RopeValueLabel");
+		_leafSizeBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/LeafSizeBox");
+		_inputText = GetNodeOrNull<LineEdit>("UiLayer/UiPanel/Margin/Root/InputText");
+		_insertText = GetNodeOrNull<LineEdit>("UiLayer/UiPanel/Margin/Root/InsertText");
+		_indexBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/Row/IndexBox");
+		_lengthBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/Row/LengthBox");
+		_statusLabel = GetNodeOrNull<Label>("UiLayer/UiPanel/Margin/Root/StatusLabel");
+	}
 
-        _panel = new PanelContainer
-        {
-            CustomMinimumSize = new Vector2(440, 0),
-            Name = "UiPanel"
-        };
-
-        MarginContainer margin = new();
-		margin.AddThemeConstantOverride("margin_left", 12);
-		margin.AddThemeConstantOverride("margin_right", 12);
-		margin.AddThemeConstantOverride("margin_top", 12);
-		margin.AddThemeConstantOverride("margin_bottom", 12);
-
-        VBoxContainer root = new();
-		root.AddThemeConstantOverride("separation", 6);
-
-		_panel.AddChild(margin);
-		margin.AddChild(root);
-		layer.AddChild(_panel);
-
-		_ropeValueLabel = new Label
+	private void HookUiEvents()
+	{
+		Button? buildButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/BuildButton");
+		if (buildButton is not null)
 		{
-			Text = string.Empty,
-			AutowrapMode = TextServer.AutowrapMode.Word
-		};
-		root.AddChild(_ropeValueLabel);
+			buildButton.Pressed += () => RunSafe(BuildRopeFromInput, "Built rope from input");
+		}
 
-		root.AddChild(new Label { Text = "Max leaf length" });
-		_leafSizeBox = new SpinBox { MinValue = 1, MaxValue = 1024, Step = 1, Value = _maxLeafLength };
-		root.AddChild(_leafSizeBox);
-
-		root.AddChild(new Label { Text = "Source text" });
-		_inputText = new LineEdit { Text = _rope.ToString() };
-		root.AddChild(_inputText);
-
-		root.AddChild(new Label { Text = "Insert text" });
-		_insertText = new LineEdit { Text = "" };
-		root.AddChild(_insertText);
-
-        HBoxContainer row = new();
-		row.AddThemeConstantOverride("separation", 8);
-		row.AddChild(new Label { Text = "Index" });
-		_indexBox = new SpinBox { MinValue = 0, Step = 1, Value = 0 };
-		row.AddChild(_indexBox);
-		row.AddChild(new Label { Text = "Length" });
-		_lengthBox = new SpinBox { MinValue = 0, Step = 1, Value = 1 };
-		row.AddChild(_lengthBox);
-		root.AddChild(row);
-
-        HBoxContainer buttonRow = new();
-		buttonRow.AddThemeConstantOverride("separation", 8);
-        Button buildButton = new() { Text = "Build" };
-		buildButton.Pressed += () => RunSafe(BuildRopeFromInput, "Built rope from input");
-		buttonRow.AddChild(buildButton);
-
-        Button insertButton = new() { Text = "Insert" };
-		insertButton.Pressed += () => RunSafe(InsertText, "Inserted text");
-		buttonRow.AddChild(insertButton);
-
-        Button deleteButton = new() { Text = "Delete" };
-		deleteButton.Pressed += () => RunSafe(DeleteText, "Deleted text");
-		buttonRow.AddChild(deleteButton);
-
-        Button resetButton = new() { Text = "Reset" };
-		resetButton.Pressed += () => RunSafe(ResetRope, "Reset to empty");
-		buttonRow.AddChild(resetButton);
-
-		root.AddChild(buttonRow);
-
-		_statusLabel = new Label
+		Button? insertButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/InsertButton");
+		if (insertButton is not null)
 		{
-			Text = string.Empty,
-			AutowrapMode = TextServer.AutowrapMode.Word
-		};
-		root.AddChild(_statusLabel);
+			insertButton.Pressed += () => RunSafe(InsertText, "Inserted text");
+		}
 
-		// Keep the panel tucked to the top-left.
-		_panel.Position = new Vector2(12, 12);
+		Button? deleteButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/DeleteButton");
+		if (deleteButton is not null)
+		{
+			deleteButton.Pressed += () => RunSafe(DeleteText, "Deleted text");
+		}
+
+		Button? resetButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/ResetButton");
+		if (resetButton is not null)
+		{
+			resetButton.Pressed += () => RunSafe(ResetRope, "Reset to empty");
+		}
+	}
+
+	private void InitializeUiValues()
+	{
+		if (_leafSizeBox is not null)
+		{
+			_leafSizeBox.Value = _maxLeafLength;
+		}
+
+		if (_inputText is not null)
+		{
+			_inputText.Text = _rope.ToString();
+		}
+
+		if (_insertText is not null)
+		{
+			_insertText.Text = string.Empty;
+		}
+
+		if (_indexBox is not null)
+		{
+			_indexBox.Value = 0;
+		}
+
+		if (_lengthBox is not null)
+		{
+			_lengthBox.Value = 1;
+		}
 	}
 
 	public void SetUiFaded(bool faded)
@@ -140,7 +122,10 @@ public partial class Main : Node2D
 		}
 		catch (Exception ex)
 		{
-			_statusLabel.Text = ex.Message;
+			if (_statusLabel is not null)
+			{
+				_statusLabel.Text = ex.Message;
+			}
 		}
 	}
 
@@ -171,19 +156,39 @@ public partial class Main : Node2D
 	{
 		UpdateLeafLimit();
 		_rope = Rope.FromString(string.Empty, _maxLeafLength);
-		_inputText.Text = string.Empty;
-		_insertText.Text = string.Empty;
+		if (_inputText is not null)
+		{
+			_inputText.Text = string.Empty;
+		}
+		if (_insertText is not null)
+		{
+			_insertText.Text = string.Empty;
+		}
 	}
 
 	private void RefreshUi(string status)
 	{
-		_indexBox.MaxValue = Math.Max(_rope.Length, 0);
-		_lengthBox.MaxValue = Math.Max(_rope.Length, 0);
-		_indexBox.Value = Math.Min(_indexBox.Value, _rope.Length);
-		_lengthBox.Value = Math.Min(_lengthBox.Value, _rope.Length);
+		if (_indexBox is not null)
+		{
+			_indexBox.MaxValue = Math.Max(_rope.Length, 0);
+			_indexBox.Value = Math.Min(_indexBox.Value, _rope.Length);
+		}
 
-		_ropeValueLabel.Text = $"Current rope: \"{_rope}\" (len: {_rope.Length})";
-		_statusLabel.Text = status;
+		if (_lengthBox is not null)
+		{
+			_lengthBox.MaxValue = Math.Max(_rope.Length, 0);
+			_lengthBox.Value = Math.Min(_lengthBox.Value, _rope.Length);
+		}
+
+		if (_ropeValueLabel is not null)
+		{
+			_ropeValueLabel.Text = $"Current rope: \"{_rope}\" (len: {_rope.Length})";
+		}
+
+		if (_statusLabel is not null)
+		{
+			_statusLabel.Text = status;
+		}
 
 		_visualizer?.SetRope(_rope);
 		_visualizer?.QueueRedraw();
