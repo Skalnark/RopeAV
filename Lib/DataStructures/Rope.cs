@@ -74,7 +74,7 @@ public sealed class Rope : SplayTree<Rope>
 			return FromString(string.Empty, 1);
 		}
 
-		if (left is null) return right!;
+		if (left is null) return right;
 		if (right is null) return left;
 
 		int limit = Math.Max(left._maxLeafLength, right._maxLeafLength);

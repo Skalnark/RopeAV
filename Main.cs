@@ -140,7 +140,7 @@ public partial class Main : Node2D
 		}
 		catch (Exception ex)
 		{
-			_statusLabel!.Text = ex.Message;
+			_statusLabel.Text = ex.Message;
 		}
 	}
 
@@ -171,19 +171,19 @@ public partial class Main : Node2D
 	{
 		UpdateLeafLimit();
 		_rope = Rope.FromString(string.Empty, _maxLeafLength);
-		_inputText!.Text = string.Empty;
-		_insertText!.Text = string.Empty;
+		_inputText.Text = string.Empty;
+		_insertText.Text = string.Empty;
 	}
 
 	private void RefreshUi(string status)
 	{
-		_indexBox!.MaxValue = Math.Max(_rope.Length, 0);
-		_lengthBox!.MaxValue = Math.Max(_rope.Length, 0);
+		_indexBox.MaxValue = Math.Max(_rope.Length, 0);
+		_lengthBox.MaxValue = Math.Max(_rope.Length, 0);
 		_indexBox.Value = Math.Min(_indexBox.Value, _rope.Length);
 		_lengthBox.Value = Math.Min(_lengthBox.Value, _rope.Length);
 
-		_ropeValueLabel!.Text = $"Current rope: \"{_rope}\" (len: {_rope.Length})";
-		_statusLabel!.Text = status;
+		_ropeValueLabel.Text = $"Current rope: \"{_rope}\" (len: {_rope.Length})";
+		_statusLabel.Text = status;
 
 		_visualizer?.SetRope(_rope);
 		_visualizer?.QueueRedraw();
