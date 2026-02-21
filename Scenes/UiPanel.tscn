@@ -1,77 +1,120 @@
-[gd_scene load_steps=1 format=3 uid="uid://c8y2n2l4t1a3d"]
+[gd_scene format=3 uid="uid://c2fbnwufo68gi"]
 
 [node name="UiLayer" type="CanvasLayer"]
 
-[node name="UiPanel" type="PanelContainer" parent="."]
-custom_minimum_size = Vector2(440, 0)
-position = Vector2(12, 12)
+[node name="ToggleUiButton" type="Button" parent="."]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 132.0
+offset_bottom = 44.0
+text = "UI"
 
-[node name="Margin" type="MarginContainer" parent="UiPanel"]
+[node name="UiWindow" type="Window" parent="."]
+oversampling_override = 1.0
+title = "Inputs"
+position = Vector2i(12, 56)
+size = Vector2i(360, 460)
+
+[node name="Margin" type="MarginContainer" parent="UiWindow"]
 theme_override_constants/margin_left = 12
-theme_override_constants/margin_right = 12
 theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="Root" type="VBoxContainer" parent="UiPanel/Margin"]
+[node name="Root" type="VBoxContainer" parent="UiWindow/Margin"]
+layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="RopeValueLabel" type="Label" parent="UiPanel/Margin/Root"]
-text = ""
+[node name="FullStringLabel" type="Label" parent="UiWindow/Margin/Root"]
+layout_mode = 2
+text = "Full string"
 
-[node name="MaxLeafLabel" type="Label" parent="UiPanel/Margin/Root"]
+[node name="FullString" type="TextEdit" parent="UiWindow/Margin/Root"]
+modulate = Color(0.92, 0.96, 1, 1)
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.875, 0.875, 0.875, 1)
+theme_override_colors/font_readonly_color = Color(1, 1, 1, 1)
+theme_override_colors/background_color = Color(0, 0, 0, 1)
+text = "teste"
+editable = false
+context_menu_enabled = false
+emoji_menu_enabled = false
+shortcut_keys_enabled = false
+selecting_enabled = false
+drag_and_drop_selection_enabled = false
+virtual_keyboard_enabled = false
+virtual_keyboard_show_on_focus = false
+middle_mouse_paste_enabled = false
+empty_selection_clipboard_enabled = false
+wrap_mode = 2
+
+[node name="MaxLeafLabel" type="Label" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 text = "Max leaf length"
 
-[node name="LeafSizeBox" type="SpinBox" parent="UiPanel/Margin/Root"]
+[node name="LeafSizeBox" type="SpinBox" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 min_value = 1.0
 max_value = 1024.0
-step = 1.0
 value = 4.0
 
-[node name="SourceLabel" type="Label" parent="UiPanel/Margin/Root"]
+[node name="SourceLabel" type="Label" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 text = "Source text"
 
-[node name="InputText" type="LineEdit" parent="UiPanel/Margin/Root"]
-text = ""
+[node name="InputText" type="LineEdit" parent="UiWindow/Margin/Root"]
+modulate = Color(0.9, 1, 0.9, 1)
+layout_mode = 2
 
-[node name="InsertLabel" type="Label" parent="UiPanel/Margin/Root"]
+[node name="InsertLabel" type="Label" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 text = "Insert text"
 
-[node name="InsertText" type="LineEdit" parent="UiPanel/Margin/Root"]
-text = ""
+[node name="InsertText" type="LineEdit" parent="UiWindow/Margin/Root"]
+modulate = Color(1, 0.92, 0.9, 1)
+layout_mode = 2
 
-[node name="Row" type="HBoxContainer" parent="UiPanel/Margin/Root"]
+[node name="Row" type="HBoxContainer" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="IndexLabel" type="Label" parent="UiPanel/Margin/Root/Row"]
+[node name="IndexLabel" type="Label" parent="UiWindow/Margin/Root/Row"]
+layout_mode = 2
 text = "Index"
 
-[node name="IndexBox" type="SpinBox" parent="UiPanel/Margin/Root/Row"]
-min_value = 0.0
-step = 1.0
-value = 0.0
+[node name="IndexBox" type="SpinBox" parent="UiWindow/Margin/Root/Row"]
+modulate = Color(0.95, 0.9, 1, 1)
+layout_mode = 2
 
-[node name="LengthLabel" type="Label" parent="UiPanel/Margin/Root/Row"]
+[node name="LengthLabel" type="Label" parent="UiWindow/Margin/Root/Row"]
+layout_mode = 2
 text = "Length"
 
-[node name="LengthBox" type="SpinBox" parent="UiPanel/Margin/Root/Row"]
-min_value = 0.0
-step = 1.0
+[node name="LengthBox" type="SpinBox" parent="UiWindow/Margin/Root/Row"]
+modulate = Color(0.9, 0.95, 0.9, 1)
+layout_mode = 2
 value = 1.0
 
-[node name="ButtonRow" type="HBoxContainer" parent="UiPanel/Margin/Root"]
+[node name="ButtonRow" type="HBoxContainer" parent="UiWindow/Margin/Root"]
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="BuildButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+[node name="BuildButton" type="Button" parent="UiWindow/Margin/Root/ButtonRow"]
+layout_mode = 2
 text = "Build"
 
-[node name="InsertButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+[node name="InsertButton" type="Button" parent="UiWindow/Margin/Root/ButtonRow"]
+layout_mode = 2
 text = "Insert"
 
-[node name="DeleteButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+[node name="DeleteButton" type="Button" parent="UiWindow/Margin/Root/ButtonRow"]
+layout_mode = 2
 text = "Delete"
 
-[node name="ResetButton" type="Button" parent="UiPanel/Margin/Root/ButtonRow"]
+[node name="ResetButton" type="Button" parent="UiWindow/Margin/Root/ButtonRow"]
+layout_mode = 2
 text = "Reset"
 
-[node name="StatusLabel" type="Label" parent="UiPanel/Margin/Root"]
-text = ""
+[node name="StatusLabel" type="Label" parent="UiWindow/Margin/Root"]
+layout_mode = 2

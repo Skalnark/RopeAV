@@ -9,7 +9,9 @@ public partial class Main : Node2D
 	private int _maxLeafLength = 4;
 	private Rope _rope = Rope.FromString("Hello, world!", 4);
 	private RopeNode? _visualizer;
-	private PanelContainer? _panel;
+	private Control? _panel;
+	private Window? _uiWindow;
+	private Button? _toggleUiButton;
 
 	private bool _uiFaded = false;
 
@@ -18,6 +20,7 @@ public partial class Main : Node2D
 	private SpinBox? _indexBox;
 	private SpinBox? _lengthBox;
 	private SpinBox? _leafSizeBox;
+	private TextEdit? _fullString;
 	private Label? _statusLabel;
 	private Label? _ropeValueLabel;
 
@@ -32,45 +35,63 @@ public partial class Main : Node2D
 
 	private void CacheUiNodes()
 	{
-		_panel = GetNodeOrNull<PanelContainer>("UiLayer/UiPanel");
-		_ropeValueLabel = GetNodeOrNull<Label>("UiLayer/UiPanel/Margin/Root/RopeValueLabel");
-		_leafSizeBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/LeafSizeBox");
-		_inputText = GetNodeOrNull<LineEdit>("UiLayer/UiPanel/Margin/Root/InputText");
-		_insertText = GetNodeOrNull<LineEdit>("UiLayer/UiPanel/Margin/Root/InsertText");
-		_indexBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/Row/IndexBox");
-		_lengthBox = GetNodeOrNull<SpinBox>("UiLayer/UiPanel/Margin/Root/Row/LengthBox");
-		_statusLabel = GetNodeOrNull<Label>("UiLayer/UiPanel/Margin/Root/StatusLabel");
+		_uiWindow = GetNodeOrNull<Window>("UiLayer/UiWindow");
+		_toggleUiButton = GetNodeOrNull<Button>("UiLayer/ToggleUiButton");
+		_panel = GetNodeOrNull<Control>("UiLayer/UiWindow/Margin/Root");
+		_ropeValueLabel = GetNodeOrNull<Label>("UiLayer/UiWindow/Margin/Root/RopeValueLabel");
+		_fullString = GetNodeOrNull<TextEdit>("UiLayer/UiWindow/Margin/Root/FullString");
+		_leafSizeBox = GetNodeOrNull<SpinBox>("UiLayer/UiWindow/Margin/Root/LeafSizeBox");
+		_inputText = GetNodeOrNull<LineEdit>("UiLayer/UiWindow/Margin/Root/InputText");
+		_insertText = GetNodeOrNull<LineEdit>("UiLayer/UiWindow/Margin/Root/InsertText");
+		_indexBox = GetNodeOrNull<SpinBox>("UiLayer/UiWindow/Margin/Root/Row/IndexBox");
+		_lengthBox = GetNodeOrNull<SpinBox>("UiLayer/UiWindow/Margin/Root/Row/LengthBox");
+		_statusLabel = GetNodeOrNull<Label>("UiLayer/UiWindow/Margin/Root/StatusLabel");
 	}
 
 	private void HookUiEvents()
 	{
-		Button? buildButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/BuildButton");
+		Button? buildButton = GetNodeOrNull<Button>("UiLayer/UiWindow/Margin/Root/ButtonRow/BuildButton");
 		if (buildButton is not null)
 		{
 			buildButton.Pressed += () => RunSafe(BuildRopeFromInput, "Built rope from input");
 		}
 
-		Button? insertButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/InsertButton");
+		Button? insertButton = GetNodeOrNull<Button>("UiLayer/UiWindow/Margin/Root/ButtonRow/InsertButton");
 		if (insertButton is not null)
 		{
 			insertButton.Pressed += () => RunSafe(InsertText, "Inserted text");
 		}
 
-		Button? deleteButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/DeleteButton");
+		Button? deleteButton = GetNodeOrNull<Button>("UiLayer/UiWindow/Margin/Root/ButtonRow/DeleteButton");
 		if (deleteButton is not null)
 		{
 			deleteButton.Pressed += () => RunSafe(DeleteText, "Deleted text");
 		}
 
-		Button? resetButton = GetNodeOrNull<Button>("UiLayer/UiPanel/Margin/Root/ButtonRow/ResetButton");
+		Button? resetButton = GetNodeOrNull<Button>("UiLayer/UiWindow/Margin/Root/ButtonRow/ResetButton");
 		if (resetButton is not null)
 		{
 			resetButton.Pressed += () => RunSafe(ResetRope, "Reset to empty");
+		}
+
+		if (_toggleUiButton is not null && _uiWindow is not null)
+		{
+			_toggleUiButton.Pressed += () => _uiWindow.Visible = !_uiWindow.Visible;
+		}
+
+		if (_uiWindow is not null)
+		{
+			_uiWindow.CloseRequested += () => _uiWindow.Hide();
 		}
 	}
 
 	private void InitializeUiValues()
 	{
+		if (_uiWindow is not null)
+		{
+			_uiWindow.Visible = true;
+		}
+
 		if (_leafSizeBox is not null)
 		{
 			_leafSizeBox.Value = _maxLeafLength;
@@ -84,6 +105,11 @@ public partial class Main : Node2D
 		if (_insertText is not null)
 		{
 			_insertText.Text = string.Empty;
+		}
+
+		if (_fullString is not null)
+		{
+			_fullString.Text = _rope.ToString();
 		}
 
 		if (_indexBox is not null)
@@ -183,6 +209,11 @@ public partial class Main : Node2D
 		if (_ropeValueLabel is not null)
 		{
 			_ropeValueLabel.Text = $"Current rope: \"{_rope}\" (len: {_rope.Length})";
+		}
+
+		if (_fullString is not null)
+		{
+			_fullString.Text = _rope.ToString();
 		}
 
 		if (_statusLabel is not null)
